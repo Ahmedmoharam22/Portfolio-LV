@@ -2,7 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useTransition } from "react";
 import { VscFolderActive, VscTerminalLinux, VscHome, VscSignOut } from "react-icons/vsc";
+import { logoutAction } from "@/lib/actions/auth";
 
 export default function DashboardLayout({
   children,
@@ -10,12 +12,19 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const [isPending, startTransition] = useTransition();
 
   const menuItems = [
     { name: "Overview", path: "/dashboard", icon: <VscHome size={18} /> },
     { name: "Manage Works", path: "/dashboard/projects", icon: <VscFolderActive size={18} /> },
     { name: "Manage Arsenal", path: "/dashboard/tech-stack", icon: <VscTerminalLinux size={18} /> },
   ];
+
+  const handleLogout = () => {
+    startTransition(async () => {
+      await logoutAction();
+    });
+  };
 
   return (
     <div className="min-h-screen w-full bg-[#0A0A0A] text-luxury-white flex">
@@ -32,7 +41,7 @@ export default function DashboardLayout({
           {/* Navigation Items */}
           <nav className="flex flex-col gap-2">
             {menuItems.map((item) => {
-              const isActive = pathname === item.path;
+              const isActive = pathname === item.path || (item.path !== "/dashboard" && pathname.startsWith(item.path));
               return (
                 <Link
                   key={item.path}
@@ -53,21 +62,24 @@ export default function DashboardLayout({
           </nav>
         </div>
 
-        {/* Exit Core Console */}
-        <Link 
-          href="/"
-          className="flex items-center gap-4 px-4 py-3 rounded-xl text-xs uppercase tracking-wider font-medium text-red-400 hover:bg-red-500/5 transition-colors"
+        {/* Logout */}
+        <button
+          onClick={handleLogout}
+          disabled={isPending}
+          className="flex items-center gap-4 px-4 py-3 rounded-xl text-xs uppercase tracking-wider font-medium text-red-400 hover:bg-red-500/5 transition-colors disabled:opacity-40 w-full"
         >
           <VscSignOut size={18} />
-          <span>Exit Console</span>
-        </Link>
+          <span>{isPending ? "Signing out..." : "Sign Out"}</span>
+        </button>
       </aside>
 
       {/* Main Content Render View */}
       <div className="flex-1 pl-64 min-h-screen bg-[#0A0A0A]">
         <header className="w-full border-b border-white/[0.02] py-6 px-8 flex items-center justify-between bg-[#0F0F0F]/30 backdrop-blur-md sticky top-0 z-30">
           <div className="text-xs uppercase tracking-widest text-luxury-muted">
-            Control Console / <span className="text-luxury-white font-medium">{pathname === "/dashboard" ? "Overview" : "Subsystem"}</span>
+            Control Console / <span className="text-luxury-white font-medium">
+              {pathname === "/dashboard" ? "Overview" : "Subsystem"}
+            </span>
           </div>
           <div className="flex items-center gap-3">
             <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
